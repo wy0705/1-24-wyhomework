@@ -1,14 +1,11 @@
 package io;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+//2、改造server，将其变成一个能够持续接收和发送数据的server。
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-//bio
+//通过bio，让server可以持续接受发送数据
 //服务器端启动一个ServerSocket
 //客户端启动Socket对服务器进行通信，默认情况下服务器端需要对每个客户建立一个线程与之通讯
 //客户端发出请求后，先咨询服务器是否有线程响应，如果没有则会等待，或者被拒绝
@@ -19,6 +16,11 @@ public class Server {
         //创建ServerSocket
         ServerSocket serverSocket=new ServerSocket(11112);
         System.out.println("聊天室启动了");
+        File fout = new File("src/aaa.txt");
+        FileOutputStream fos = new FileOutputStream(fout);
+
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+
         while (true){
             //监听，等待客户端连接
             final Socket socket=serverSocket.accept();
@@ -29,18 +31,17 @@ public class Server {
                 public void run() {//重写
                     //可以和客户端通讯
                     try {
-                        handle(socket);
+                        handle(socket,bw);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             });
         }
+
     }
-    public static void handle(Socket socket) throws IOException {
+    public static void handle(Socket socket,BufferedWriter bw) throws IOException {
         try {
-            File fout = new File("src/table.txt");
-            FileOutputStream fos = new FileOutputStream(fout);
             System.out.println("线程信息 id="+Thread.currentThread().getId()+"名字"+Thread.currentThread().getName());
             byte[] bytes = new byte[1024];
             //通过socket获取输入流
@@ -50,8 +51,10 @@ public class Server {
                 System.out.println("线程信息 id="+Thread.currentThread().getId()+"名字"+Thread.currentThread().getName());
                 int read=inputStream.read(bytes);
                 if (read!=-1){
-                    System.out.println(new String(bytes,0,read));
-
+                    String s=new String(bytes,0,read);
+                    System.out.println(s);
+                    bw.write(s);
+                    bw.newLine();
                 }else {
                     break;
                 }
